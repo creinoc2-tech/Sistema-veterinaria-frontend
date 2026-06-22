@@ -30,23 +30,24 @@ export default class HttpClient {
 
           try {
             const response = await axios.post(
-              `${this.apiUrl}/users/refresh-token`,
+              `${this.apiUrl}/auth/refresh`,
+              {},
               {
-                refreshToken: refreshToken.state.user.refreshToken,
+                headers: {
+                  Authorization: `Bearer ${refreshToken.state.refreshToken}`,
+                },
               },
             );
+            refreshToken.state.token = response.data.accessToken;
+            refreshToken.state.refreshToken = response.data.refreshToken;
 
-            refreshToken.state.token = response.data.newToken;
-            refreshToken.state.user.token = response.data.newToken;
             localStorage.setItem("auth", JSON.stringify(refreshToken));
 
-            originalRequest.headers.Authorization = `Bearer ${response.data.newToken}`;
+            originalRequest.headers.Authorization = `Bearer ${response.data.accessToken}`;
             return this.http(originalRequest);
           } catch (refreshError: any) {
             refreshToken.state.token = null;
-            refreshToken.state.user.refreshToken = null;
-            refreshToken.state.user.token = null;
-            refreshToken.state.user.isLogedIn = false;
+            refreshToken.state.refreshToken = null;
             localStorage.setItem("auth", JSON.stringify(refreshToken));
             window.location.href = "/signin";
           }
